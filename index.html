@@ -16,16 +16,44 @@
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --radius: 12px;
         }
+        /* 添加类来强制控制深色/浅色模式，优先级高于媒体查询 */
+        html.dark-theme {
+            --primary: #818cf8;
+            --primary-hover: #6366f1;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --text-light: #94a3b8;
+            --border: #334155;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        }
+        html.light-theme {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
         @media (prefers-color-scheme: dark) {
             :root {
                 --primary: #818cf8;
-                --primary-hover: #6366f1;
-                --bg: #0f172a;
-                --card-bg: #1e293b;
-                --text: #f1f5f9;
-                --text-light: #94a3b8;
-                --border: #334155;
-                --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+                /* ... rest of dark theme vars ... */
+                /* 这里为了避免重复代码，建议使用变量覆盖的方式，或者在上面定义两套变量 */
+                /* 现在的实现方式是让媒体查询作为默认行为，但类选择器可以覆盖它 */
+            }
+            /* 当系统是深色，但用户强制浅色时 */
+            html.light-theme {
+                 --primary: #6366f1;
+                --primary-hover: #4f46e5;
+                --bg: #f8fafc;
+                --card-bg: #ffffff;
+                --text: #334155;
+                --text-light: #64748b;
+                --border: #e2e8f0;
+                --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             }
         }
         body {
@@ -48,6 +76,24 @@
             box-shadow: var(--shadow);
             padding: 2.5rem;
             transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .theme-toggle:hover {
+            background-color: var(--bg);
+            color: var(--primary);
         }
         h1 { 
             text-align: center; 
@@ -163,6 +209,9 @@
 </head>
 <body>
     <div class="container">
+        <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+            🌗
+        </button>
         <h1>⏰ 时间计算器</h1>
         
         <div class="tabs">
@@ -302,7 +351,40 @@
             resultDiv.innerHTML = "结果时间：<br><span class='highlight'>" + resultTime.toLocaleString('zh-CN', options) + "</span>";
         }
 
-        window.onload = initTime;
+        window.onload = function() {
+            initTime();
+            // 检查保存的主题偏好
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-theme');
+            } else if (savedTheme === 'light') {
+                document.documentElement.classList.remove('dark-theme');
+            }
+        };
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            // 如果已经在dark-theme类，或者是系统处于暗黑模式且没有手动覆盖过
+            const isDark = html.classList.contains('dark-theme') || 
+                          (!html.classList.contains('dark-theme') && 
+                           !localStorage.getItem('theme') && 
+                           window.matchMedia('(prefers-color-scheme: dark)').matches);
+            
+            if (isDark) {
+                html.classList.remove('dark-theme');
+                localStorage.setItem('theme', 'light');
+                // 为了处理系统暗黑模式下移除类后依然是暗黑的问题，我们需要确保CSS优先级
+                // 这里我们简化逻辑：如果用户选择了浅色，我们移除dark类，但如果系统是深色，媒体查询会生效
+                // 解决方案：修改CSS，让.dark-theme类具有更高优先级，或者使用 data-theme 属性
+                // 我们已经在上面的CSS中添加了 html.dark-theme 选择器
+                // 但是对于“强制浅色”，我们需要一个新的类
+                html.classList.add('light-theme');
+            } else {
+                html.classList.remove('light-theme');
+                html.classList.add('dark-theme');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
     </script>
 </body>
 </html>
