@@ -205,6 +205,20 @@
             color: var(--text-light);
             font-size: 0.9rem;
         }
+
+        /* 修复暗黑模式下日历图标的颜色 */
+        html.dark-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+        @media (prefers-color-scheme: dark) {
+            input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+                filter: invert(1);
+            }
+            /* 如果用户强制切换到浅色，则恢复图标颜色 */
+            html.light-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+                filter: invert(0);
+            }
+        }
     </style>
 </head>
 <body>
