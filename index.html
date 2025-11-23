@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间计算器</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #818cf8;
+                --primary-hover: #6366f1;
+                --bg: #0f172a;
+                --card-bg: #1e293b;
+                --text: #f1f5f9;
+                --text-light: #94a3b8;
+                --border: #334155;
+                --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+            }
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 2.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        h1 { 
+            text-align: center; 
+            margin-bottom: 2rem; 
+            font-size: 1.8rem;
+            color: var(--text);
+            font-weight: 700;
+        }
+        .tabs { 
+            display: flex; 
+            background: var(--bg);
+            padding: 4px;
+            border-radius: 10px;
+            margin-bottom: 2rem; 
+            border: 1px solid var(--border);
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            color: var(--text-light);
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        .tab.active { 
+            background: var(--card-bg);
+            color: var(--primary); 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .content { 
+            display: none; 
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .content.active { display: block; }
+        .form-group { margin-bottom: 1.5rem; }
+        label { 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            font-weight: 500; 
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+        input[type="datetime-local"], input[type="number"], select {
+            width: 100%;
+            padding: 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 1rem;
+            box-sizing: border-box; 
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+        .row { display: flex; gap: 12px; }
+        .row > * { flex: 1; }
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn:hover { opacity: 0.95; transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .result {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: none;
+            color: var(--text);
+            line-height: 1.6;
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result span.highlight {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.2em;
+        }
+        .result small {
+            display: block;
+            margin-top: 0.5rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏰ 时间计算器</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('diff')">计算时间差</div>
+            <div class="tab" onclick="switchTab('add')">时间推算</div>
+        </div>
+
+        <!-- 时间差计算 -->
+        <div id="diff" class="content active">
+            <div class="form-group">
+                <label>开始时间</label>
+                <input type="datetime-local" id="start-time">
+            </div>
+            <div class="form-group">
+                <label>结束时间</label>
+                <input type="datetime-local" id="end-time">
+            </div>
+            <button class="btn" onclick="calculateDiff()">计算间隔</button>
+            <div id="diff-result" class="result"></div>
+        </div>
+
+        <!-- 时间推算 -->
+        <div id="add" class="content">
+            <div class="form-group">
+                <label>基准时间</label>
+                <input type="datetime-local" id="base-time">
+            </div>
+            <div class="form-group">
+                <label>操作</label>
+                <div class="row">
+                    <select id="operation">
+                        <option value="add">加上 (+)</option>
+                        <option value="subtract">减去 (-)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>时间量</label>
+                <div class="row">
+                    <input type="number" id="days" placeholder="天" min="0">
+                    <input type="number" id="hours" placeholder="小时" min="0">
+                    <input type="number" id="minutes" placeholder="分钟" min="0">
+                </div>
+            </div>
+            <button class="btn" onclick="calculateDate()">推算日期</button>
+            <div id="add-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化时间输入框为当前时间
+        function initTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const currentDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            
+            document.getElementById('start-time').value = currentDateTime;
+            document.getElementById('end-time').value = currentDateTime;
+            document.getElementById('base-time').value = currentDateTime;
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function calculateDiff() {
+            const start = new Date(document.getElementById('start-time').value);
+            const end = new Date(document.getElementById('end-time').value);
+            const resultDiv = document.getElementById('diff-result');
+
+            if (isNaN(start) || isNaN(end)) {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = "请选择有效的时间";
+                return;
+            }
+
+            let diff = end - start;
+            const isNegative = diff < 0;
+            diff = Math.abs(diff);
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+            const totalHours = (diff / (1000 * 60 * 60)).toFixed(1);
+
+            let text = isNegative ? "相差（倒退）：<br>" : "相差：<br>";
+            text += `<span class="highlight">${days}天 ${hours}小时 ${minutes}分钟</span>`;
+            text += `<small>总计约 ${totalHours} 小时</small>`;
+
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = text;
+        }
+
+        function calculateDate() {
+            const base = new Date(document.getElementById('base-time').value);
+            const operation = document.getElementById('operation').value;
+            const days = parseInt(document.getElementById('days').value) || 0;
+            const hours = parseInt(document.getElementById('hours').value) || 0;
+            const minutes = parseInt(document.getElementById('minutes').value) || 0;
+            const resultDiv = document.getElementById('add-result');
+
+            if (isNaN(base)) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = "<span>请选择基准时间</span>";
+                return;
+            }
+
+            const totalMs = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) + (minutes * 60 * 1000);
+            
+            let resultTime;
+            if (operation === 'add') {
+                resultTime = new Date(base.getTime() + totalMs);
+            } else {
+                resultTime = new Date(base.getTime() - totalMs);
+            }
+
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                weekday: 'long' 
+            };
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = "结果时间：<br><span class='highlight'>" + resultTime.toLocaleString('zh-CN', options) + "</span>";
+        }
+
+        window.onload = initTime;
+    </script>
+</body>
+</html>
+
